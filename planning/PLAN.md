@@ -454,3 +454,42 @@ The container is designed to deploy to AWS App Runner, Render, or any container 
 - Portfolio visualization: heatmap renders with correct colors, P&L chart has data points
 - AI chat (mocked): send a message, receive a response, trade execution appears inline
 - SSE resilience: disconnect and verify reconnection
+
+---
+
+## 13. Doc Review Notes (2026-09-17)
+
+Review of this plan against the current repo state (only `backend/app/market/` is built so far, per `planning/MARKET_DATA_SUMMARY.md`). Grouped by theme; nothing here blocks continued work, but the items marked **(gap)** should be resolved before the Backend/Frontend agents build the dependent pieces.
+
+### Trading & tickers
+
+- **(gap) Can the Trade Bar / LLM trade a ticker that isn't on the watchlist?** §10 describes the Trade Bar as a free-text ticker field, but §6 says the price cache only holds prices for tickers "known to the system," which §6 equates with the watchlist. If trading is restricted to watchlist tickers, say so explicitly (and have the frontend constrain/autocomplete the ticker field); if not, define where a price for an unwatched ticker comes from.
+- **(gap) What happens to a position when its ticker is removed from the watchlist?** Does the position persist (needing its own price lookup independent of the watchlist), or does removal get blocked/warned while a position is open? This affects whether the price cache needs to track "watchlist ∪ tickers with open positions" rather than just the watchlist.
+- **When a sell reduces a position to exactly zero**, is the `positions` row deleted or kept at `quantity = 0`? Matters for the positions table (should a flat position disappear?) and for re-buying later (fresh `avg_cost` vs. reusing the row).
+- **Is there any ticker validation** on watchlist add / manual trade / LLM trade (e.g., must exist in the simulator's seed list or resolve via Massive), or is any uppercase string accepted? Worth a sentence, since a bogus ticker would have no price and break P&L math.
+
+### Market data / SSE
+
+- §6 "SSE Streaming" says the server pushes "at a regular cadence (~500ms)," but `MARKET_DATA_SUMMARY.md` says the actual stream implementation uses **version-based change detection** (push on change, not a fixed tick). Worth updating §6 to match what was actually built, so the Frontend agent doesn't assume a fixed-interval push.
+- **Massive free-tier polling**: §6 says it polls "the union of all watched tickers" every 15s on the free tier — is that one batch API call for all tickers, or one call per ticker? If it's per-ticker, 10 default tickers alone would exceed 5 calls/min. Worth a clarifying note now that the Massive client is already implemented, so the doc reflects reality.
+
+### LLM integration
+
+- §9 states "There is an OPENROUTER_API_KEY in the .env file in the project root" — this duplicates §5's Environment Variables section. Minor, but consider just cross-referencing §5 instead of restating it, so the two can't drift out of sync.
+- **(gap) No mention of LLM call failure/timeout handling.** If the OpenRouter/Cerebras call errors out or times out, what does `/api/chat` return to the frontend? Worth a sentence, since auto-executed trades mean a hung or failed call has no fallback UX defined.
+- **Conversation history growth is unbounded.** §9 says "recent conversation history" is loaded from `chat_messages` but doesn't say how many messages/tokens — worth pinning a number (e.g., "last 20 messages") so context doesn't grow indefinitely in a long demo session.
+
+### Frontend
+
+- §10 "Technical Notes" says "Canvas-based charting library preferred (Lightweight Charts or Recharts)" — Recharts is SVG-based, not canvas, so the two examples contradict the stated preference. Consider either dropping the canvas requirement or naming two canvas-based options (e.g., Lightweight Charts, uPlot).
+- **No library is named for the portfolio heatmap/treemap** (§10), unlike the line charts. Naming one now (e.g., `visx`, `nivo`, or a hand-rolled treemap) avoids the Frontend agent picking something that doesn't match the rest of the chosen chart stack.
+
+### Database / concurrency
+
+- **SQLite write concurrency**: the price-cache background task, the 30s portfolio-snapshot task, and request-handling trade writes all touch SQLite concurrently. Worth explicitly calling for WAL mode (`PRAGMA journal_mode=WAL`) in §7 so this doesn't get discovered as a bug later under concurrent load.
+
+### Simplification opportunities
+
+- §7's `positions` and `trades` tables both support fractional `quantity`, but §10's Trade Bar and §2's "Buy and sell shares" don't say whether the UI accepts fractional input or is integer-only. If fractional isn't actually needed for the demo, restricting to whole shares would simplify input validation and display formatting throughout.
+- §11 lists `docker-compose.yml` as an "optional convenience wrapper" while §3's rationale table says "no docker-compose for production, no service orchestration." These aren't contradictory (compose is dev-only) but could read that way — a one-line clarification ("used for local dev only; the start scripts drive Docker directly for the production path") would remove the ambiguity.
+- Given the whole app is single-user with a hardcoded `"default"` `user_id`, consider explicitly noting in §7 that this column is intentionally dead weight today (for future multi-user), so a future reader doesn't try to "simplify" it away — or conversely, if multi-user is unlikely to ever happen, consider dropping it now rather than carrying it through every table and query.
