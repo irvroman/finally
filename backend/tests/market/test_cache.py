@@ -41,13 +41,16 @@ class TestPriceCache:
         """Test removing a ticker from cache."""
         cache = PriceCache()
         cache.update("AAPL", 190.00)
+        version = cache.version
         cache.remove("AAPL")
         assert cache.get("AAPL") is None
+        assert cache.version == version + 1
 
     def test_remove_nonexistent(self):
         """Test removing a ticker that doesn't exist."""
         cache = PriceCache()
         cache.remove("AAPL")  # Should not raise
+        assert cache.version == 0
 
     def test_get_all(self):
         """Test getting all prices."""

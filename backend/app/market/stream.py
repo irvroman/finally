@@ -14,16 +14,14 @@ from .cache import PriceCache
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/stream", tags=["streaming"])
-
-
 def create_stream_router(price_cache: PriceCache) -> APIRouter:
     """Create the SSE streaming router with a reference to the price cache.
 
     This factory pattern lets us inject the PriceCache without globals.
     """
+    stream_router = APIRouter(prefix="/api/stream", tags=["streaming"])
 
-    @router.get("/prices")
+    @stream_router.get("/prices")
     async def stream_prices(request: Request) -> StreamingResponse:
         """SSE endpoint for live price updates.
 
@@ -45,7 +43,7 @@ def create_stream_router(price_cache: PriceCache) -> APIRouter:
             },
         )
 
-    return router
+    return stream_router
 
 
 async def _generate_events(
