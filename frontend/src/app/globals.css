@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0d1117;
+  --color-panel: #121922;
+  --color-raised: #18212d;
+  --color-line: #232e3c;
+  --color-line-strong: #33415280;
+  --color-ink: #d8dfe9;
+  --color-muted: #7d8999;
+  --color-faint: #4b5666;
+  --color-up: #22c07a;
+  --color-down: #ef4f5f;
+  --color-accent: #ecad0a;
+  --color-blue: #209dd7;
+  --color-purple: #753991;
+  --color-purple-hover: #8a47aa;
+
+  --font-sans: "IBM Plex Sans Condensed", ui-sans-serif, system-ui, sans-serif;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  height: 100%;
+}
+
+body {
+  font-size: 13px;
+  line-height: 1.35;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Every figure in the terminal lines up in columns. */
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 1px;
+}
+
+/* Price flash: a tinted background that fades out over ~500ms. */
+@keyframes flash-up {
+  from { background-color: rgb(34 192 122 / 0.45); }
+  to { background-color: transparent; }
+}
+@keyframes flash-down {
+  from { background-color: rgb(239 79 95 / 0.45); }
+  to { background-color: transparent; }
+}
+.flash-up { animation: flash-up 550ms ease-out; }
+.flash-down { animation: flash-down 550ms ease-out; }
+
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.25; }
+  40% { opacity: 1; }
+}
+.dot-pulse span { animation: blink 1.2s infinite ease-in-out; }
+.dot-pulse span:nth-child(2) { animation-delay: 0.15s; }
+.dot-pulse span:nth-child(3) { animation-delay: 0.3s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .flash-up, .flash-down, .dot-pulse span { animation-duration: 1ms; }
+}
+
+/* Thin, quiet scrollbars for dense panels. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3544 transparent;
+}

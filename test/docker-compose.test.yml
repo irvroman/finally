@@ -1,0 +1,46 @@
+# E2E test stack: the app (built from the repo Dockerfile, LLM mocked, fresh DB) plus a
+# Playwright container that runs the suite against it.
+#
+#   docker compose -f test/docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from playwright
+#   docker compose -f test/docker-compose.test.yml down -v
+services:
+  # Not named "app": ".app" is an HSTS-preloaded TLD, so Chromium would force https://app:8000.
+  finally-app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      LLM_MOCK: "true"
+      MASSIVE_API_KEY: ""
+      OPENROUTER_API_KEY: ""
+    # tmpfs gives every run a freshly seeded database.
+    tmpfs:
+      - /app/db:mode=1777
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.63.0-noble
+    depends_on:
+      finally-app:
+        condition: service_healthy
+    working_dir: /tests
+    environment:
+      BASE_URL: http://finally-app:8000
+      FRESH_DB: "true"
+      CI: "true"
+    volumes:
+      - ./:/tests
+      # Keep the container's Linux node_modules separate from the host's.
+      - playwright-node-modules:/tests/node_modules
+    command: ["sh", "-c", "npm ci --no-audit --no-fund && npx playwright test"]
+
+volumes:
+  playwright-node-modules:
