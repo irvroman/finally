@@ -1,0 +1,39 @@
+# VCS / tooling
+.git
+.github
+.claude
+.vscode
+.idea
+
+# Secrets and local state
+.env
+.env.*
+!.env.example
+db/*.db
+db/*.db-*
+
+# Node / Next.js
+**/node_modules
+**/.next
+frontend/out
+
+# Python
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/.coverage
+**/htmlcov
+backend/static
+
+# Tests / docs not needed in the image
+test
+planning
+**/test-results
+**/playwright-report
+
+# Misc
+**/*.log
+.DS_Store
+Thumbs.db

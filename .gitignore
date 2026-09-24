@@ -205,3 +205,23 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ---------- FinAlly ----------
+# Runtime SQLite database (db/.gitkeep keeps the directory)
+db/*.db
+db/*.db-*
+
+# Node / Next.js
+node_modules/
+.next/
+frontend/out/
+next-env.d.ts
+
+# Frontend build copied into the backend for local serving
+backend/static/
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/

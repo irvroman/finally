@@ -1,0 +1,4 @@
+# Keep shell scripts LF so they run in Linux containers / macOS even from a Windows checkout
+*.sh text eol=lf
+*.ps1 text eol=crlf
+Dockerfile text eol=lf

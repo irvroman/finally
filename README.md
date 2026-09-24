@@ -25,17 +25,52 @@ Single Docker container serving everything on port 8000:
 
 ## Quick Start
 
+Requires Docker (Docker Desktop on macOS/Windows).
+
 ```bash
-# Clone and configure
+# 1. Configure
 cp .env.example .env
-# Add your OPENROUTER_API_KEY to .env
+# edit .env and set OPENROUTER_API_KEY (optional: MASSIVE_API_KEY)
 
-# Run with Docker
-docker build -t finally .
-docker run -v finally-data:/app/db -p 8000:8000 --env-file .env finally
+# 2. Start (builds the image on first run, then opens http://localhost:8000)
+./scripts/start_mac.sh            # macOS / Linux
+.\scripts\start_windows.ps1       # Windows PowerShell
 
-# Open http://localhost:8000
+# 3. Stop (your data is kept in the `finally-data` volume)
+./scripts/stop_mac.sh
+.\scripts\stop_windows.ps1
 ```
+
+Start script options: `--build` / `-Build` forces an image rebuild, and `--no-open` / `-NoOpen` skips opening the browser. Both scripts are idempotent, so you can re-run them safely. If `.env` is missing, it is created from `.env.example`. The app still runs, but AI chat needs a real key (or `LLM_MOCK=true`).
+
+If PowerShell blocks the script, run `powershell -ExecutionPolicy Bypass -File .\scripts\start_windows.ps1`.
+
+### Plain Docker
+
+```bash
+docker build -t finally .
+docker run -d --name finally -v finally-data:/app/db -p 8000:8000 --env-file .env finally
+```
+
+Or use `docker compose up --build`. Compose is an optional convenience for local development.
+
+To reset all data, run `docker volume rm finally-data` while the container is stopped.
+
+### Local development (without Docker)
+
+```bash
+# Backend (http://localhost:8000)
+cd backend
+uv sync --extra dev
+uv run uvicorn app.main:app --reload --port 8000
+
+# Frontend dev server (http://localhost:3000, proxies /api to :8000)
+cd frontend
+npm install
+npm run dev
+```
+
+Backend tests: `cd backend && uv run --extra dev pytest`.
 
 ## Environment Variables
 
